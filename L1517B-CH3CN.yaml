@@ -1,0 +1,31 @@
+input files:
+    MADCUBA table:
+    - L1517B-madcuba.csv
+    - L1517BOFF1-madcuba.csv
+    processing table:
+    - L1517B-processing.csv
+    - L1517BOFF1-processing.csv
+
+output files:
+    RADEX results: radex-output-CH3CN.yaml
+    
+RADEX parameters:
+    CH3CN:
+        MADCUBA name: CH3CN
+        observed lines:
+            frequency (MHz): [110381.39, 110383.48]
+            intensity (K): [[0.046, 0.047], [0.020, 0.010]]
+            rms noise (mK): ['auto', 'auto']
+        background temperature (K): [2.73, 2.73]
+        kinetic temperature (K): [10, 10]
+        hydrogen number density (/cm3): [2.2e5, 1.235e5]
+        line width (km/s): ['auto', 'auto']
+        column density (/cm2): ['auto', 'auto']
+
+RADEX fit parameters: 'column density'
+
+show RADEX plots: no
+save RADEX plots: yes
+save individual plots: yes
+
+load previous RADEX results: yes

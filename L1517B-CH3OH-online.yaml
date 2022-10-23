@@ -1,0 +1,39 @@
+input files:
+    MADCUBA table:
+    - L1517B-madcuba.csv
+    - L1517BOFF1-madcuba.csv
+    processing table:
+    - L1517B-processing.csv
+    - L1517BOFF1-processing.csv
+    
+RADEX parameters:
+    CH3OH-A:
+        MADCUBA name: CH3OH-A,vt=0-2
+        observed lines:
+            frequency (MHz): [96741.371, 95914.310]
+            intensity (K): [[0.63, 0], [0.73, 0]]
+            rms noise (mK): ['auto', 'auto']
+        background temperature (K): [2.73, 2.73]
+        kinetic temperature (K): [10, 10]
+        hydrogen number density (/cm3): [2.2e5, 1.235e5]
+        line width (km/s): ['auto', 'auto']
+        column density (/cm2): ['auto', 'auto']
+    CH3OH-E:
+        MADCUBA name: CH3OH-E,vt=0-2
+        observed lines:
+            frequency (MHz): [96739.358, 96744.545]
+            intensity (K): [[0.44, 0.03], [0.53, 0.04]]
+            rms noise (mK): ['auto', 'auto']
+        background temperature (K): [2.73, 2.73]
+        kinetic temperature (K): [10, 10]
+        hydrogen number density (/cm3): [2.2e5, 1.235e5]
+        line width (km/s): ['auto', 'auto']
+        column density (/cm2): ['auto', 'auto']
+
+RADEX fit parameters: 'column density, H2 number density'
+
+show RADEX plots: yes
+save RADEX plots: no
+
+load previous RADEX results: no
+
