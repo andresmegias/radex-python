@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
-config_file = 'L1517B-CH3OH-online.yaml'
+config_file = 'examples/L1517B-CH3OH-online.yaml'
 
 import os
 import re
