@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
+radex_path = '/Users/user/Documents/RADEX/bin/radex'
 config_file = 'L1517B-CH3OH.yaml'
-radex_path = '/Users/andresmegias/Documents/RADEX/bin/radex'
 
 import os
 import re
