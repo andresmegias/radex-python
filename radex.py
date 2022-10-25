@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
-config_file = 'examples/L1517B-HC3N.yaml'
-radex_path = '/Users/user/Documents/RADEX/bin/radex'
+config_file = 'L1517B-CH3OH.yaml'
+radex_path = '/Users/andresmegias/Documents/RADEX/bin/radex'
 
 import os
 import re
@@ -990,6 +990,7 @@ print('----------------------')
 default_config = {
     'input files': [],
     'output files': {'RADEX results': 'radex-output.yaml'},
+    'RADEX path': '',
     'lines margin (MHz)': 0.2,
     'RADEX parameters': [],
     'RADEX fit parameters': 'column density',
@@ -1029,7 +1030,9 @@ if not 'RADEX results' in config['output files']:
     config['output files']['RADEX results'] = \
         default_config['output files']['RADEX results']
 output_file = config['output files']['RADEX results']
-
+radex_path = config['RADEX path']
+if config['RADEX path'] != '':
+    radex_path = config['RADEX path']
 lines_margin = config['lines margin (MHz)'] / 1e3
 radex_list = config['RADEX parameters']
 load_previous_results = config['load previous RADEX results']
