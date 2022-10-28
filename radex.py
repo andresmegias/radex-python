@@ -3,7 +3,7 @@
 """
 RADEX Online Python Interface
 -----------------------------
-Version 1.2
+Version 1.3
 
 Copyright (C) 2022  Andrés Megías Toledano
 
@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
-radex_path = '/Users/user/Documents/RADEX/bin/radex'
-config_file = 'L1517B-CH3OH.yaml'
+radex_path = '/Users/andresmegias/Documents/RADEX/bin/radex'
+config_file = 'examples/L1517B-CH3CN.yaml'
 
 import os
 import re
@@ -170,8 +170,8 @@ def format_species_name(input_name, simplify_numbers=True):
             output_name = output_name.replace('{'+number+'}', number)
     return output_name
 
-def radex(molecule, min_freq, max_freq, kin_temp, backgr_temp,
-          h2_num_dens, col_dens, line_width):
+def radex(molecule, min_freq, max_freq, kin_temp, backgr_temp, h2_num_dens,
+          col_dens, line_width):
     """
     Perform the RADEX calculation with the given parameters.
 
@@ -317,16 +317,17 @@ def loss_function(observed_lines, observed_uncs, reference_lines):
 
     Parameters
     ----------
-    observed_tranitions : dataframe
-        Dataframe containing the observed transitions with their uncertainties.
-    reference_transitions : dataframe
-        Dataframe containing the reference transitions.
+    observed_lines : array
+        Observed intensities of the lines.
+    observed_uncs : array
+        Observed uncertainties for the line intensities.
+    reference_lines : array
+        Reference intensities of the lines.
 
     Returns
     -------
     difference : float
         Value of the difference between both input tables.
-
     """
     loss = 0
     for obs_intensity, obs_intensity_unc, ref_intensity in \
@@ -334,11 +335,11 @@ def loss_function(observed_lines, observed_uncs, reference_lines):
         obs_intensity = float(obs_intensity)
         obs_intensity_unc = float(obs_intensity_unc)
         ref_intensity = float(ref_intensity)
-        loss += ((obs_intensity - ref_intensity) / obs_intensity)**2
+        loss += ((obs_intensity - ref_intensity) / obs_intensity_unc)**2
     return loss
 
 def loss_distribution(observed_lines, observed_uncs, reference_lines,
-                      num_variants=100000):
+                      len_sample=int(1e5)):
     """
     Compute the loss distribution between the observed and reference lines.
 
@@ -350,9 +351,9 @@ def loss_distribution(observed_lines, observed_uncs, reference_lines,
         Intensity uncertainties of the observed transitions.
     reference_lines : list (float)
         Intensities of the theoretical transitions.
-    num_variants : int
+    len_sample : int
         Number of points to create the distribution of intensities from the
-        uncertainties. The default is 10000.
+        uncertainties. The default is int(1e5).
 
     Returns
     -------
@@ -360,16 +361,16 @@ def loss_distribution(observed_lines, observed_uncs, reference_lines,
         Values of the resulting losses between the observed and reference lines.
 
     """
-    observed_lines_variants = \
-        np.repeat(observed_lines.reshape(-1,1).transpose(),
-                  num_variants, axis=0)
+    observed_lines = np.array(observed_lines)
+    observed_uncs = np.array(observed_uncs)
+    reference_lines = np.array(reference_lines)
+    observed_lines_sample = np.repeat(observed_lines.reshape(-1,1).transpose(),
+                                      len_sample, axis=0)
     for i, unc in enumerate(observed_uncs):
-        observed_lines_variants[:,i] += \
-            np.maximum(0, np.random.normal(0, unc, num_variants))
-    losses = []
-    for observed_lines_i in observed_lines_variants:
-        losses += [loss_function(observed_lines_i, observed_uncs,
-                                 reference_lines)]
+        observed_lines_sample[:,i] += np.random.normal(0., unc, len_sample)
+        # observed_lines_sample = np.maximum(0., observed_lines_sample)
+    losses = [loss_function(observed_lines_i, observed_uncs, reference_lines)
+              for observed_lines_i in observed_lines_sample]
     losses = np.array(losses)
     return losses
 
@@ -377,7 +378,7 @@ def get_loss_from_radex(name, min_freq, max_freq, kin_temp, backgr_temp,
                         h2_num_dens, col_dens, line_width,
                         observed_lines, observed_uncs, inds):
     """
-    Compute the loss fro, RADEX calculation with the given parameters.
+    Compute the loss from a RADEX calculation with the given parameters.
 
     Parameters
     ----------
@@ -409,15 +410,13 @@ def get_loss_from_radex(name, min_freq, max_freq, kin_temp, backgr_temp,
     losses : array
         Array of the losses of the input parameters.
     """
-    radex_results = \
-        radex(name, min_freq, max_freq, kin_temp,
-              backgr_temp, h2_num_dens, col_dens, line_width)
+    radex_results = radex(name, min_freq, max_freq, kin_temp, backgr_temp,
+                          h2_num_dens, col_dens, line_width)
     losses = []
     for radex_transitions in radex_results:
         radex_lines = radex_transitions.iloc[inds]['intensity (K)'].values
         loss = loss_function(observed_lines, observed_uncs, radex_lines)
         losses += [loss]
-    losses = np.array(losses)
     if len(losses) == 1:
         losses = loss
     return losses
@@ -505,6 +504,7 @@ def radex_uncertainty_grid(observed_transitions, molecule, min_freq, max_freq,
         names = np.array(['column density', 'H2 number density', 'temperature'])
         idx = np.array([6, 5, 3])[names == param_name][0]
         x = params[idx]
+        min_x = 0.001*x
         frac = 1
         min_frac = 1e-5
         good_range = False
@@ -512,7 +512,7 @@ def radex_uncertainty_grid(observed_transitions, molecule, min_freq, max_freq,
         while not good_range and frac > min_frac:
             x1 = x - frac*x/2
             x2 = x + frac*x/2
-            x1 = max(0.01*x, x1)
+            x1 = max(min_x, x1)
             losses = []
             x_values = [x1, x, x2]
             for x_i in x_values:
@@ -538,7 +538,7 @@ def radex_uncertainty_grid(observed_transitions, molecule, min_freq, max_freq,
             if ((np.mean([losses[0], losses[1]]) > threshold)
                 and (np.mean([losses[1], losses[-1]]) > threshold)):
                 large_range = True
-            if large_range == small_range:
+            if large_range == small_range or x1 == min_x:
                 good_range = True
             if not good_range:
                 if large_range and frac/2 not in all_fracs:
@@ -584,7 +584,6 @@ def radex_uncertainty_grid(observed_transitions, molecule, min_freq, max_freq,
         names = np.array(['column density', 'H2 number density', 'temperature'])
         idx = np.array([6, 5, 3])[names == param_name][0]
         x = params[idx]
-        losses = []
         if param_name == 'column density':
             col_dens = x_values
         elif param_name == 'H2 number density':
@@ -980,6 +979,7 @@ species_abreviations = {
 
 #%%
 
+plt.close('all')
 t1 = time.time()
 
 print()
@@ -1030,7 +1030,6 @@ if not 'RADEX results' in config['output files']:
     config['output files']['RADEX results'] = \
         default_config['output files']['RADEX results']
 output_file = config['output files']['RADEX results']
-radex_path = config['RADEX path']
 if config['RADEX path'] != '':
     radex_path = config['RADEX path']
 lines_margin = config['lines margin (MHz)'] / 1e3
@@ -1050,7 +1049,7 @@ if ('RADEX fit parameters' in config and config['RADEX fit parameters']
 
 
 all_results = []
-results_file = config_file.replace('.yaml', '.pkl')
+results_file = config_file.replace('.yaml', '.pkl').split('/')[-1]
 if load_previous_results:
     with open(results_file, 'rb') as file:
         previous_results = pickle.load(file)
@@ -1208,7 +1207,7 @@ for molecule in radex_list:
                                             kin_temp, backgr_temp, x2, x1,
                                             line_width, observed_lines,
                                             observed_uncs, inds)
-                 print(('col. dens. (/cm2): {:.3e}, H2 dens (/cm3).: {:.3e}, '
+                 print(('col. dens. (/cm2): {:.3e}, H2 dens. (/cm3): {:.3e}, '
                        + 'loss: {:.3e}').format(float(x1), float(x2), loss))
                  return loss
         elif fit_params == 'column density, temperature':
@@ -1444,25 +1443,16 @@ for molecule in radex_list:
             ax = plt.subplot(nrows, ncols, n)
             plt.hist(losses_lim, color='gray', histtype='stepfilled',
                      edgecolor='black', bins='auto', density=True)
-            if loss_ref == 0:
-                lw = 3
-                alpha = 1
-            else:
-                lw = 1
-                alpha = 0.6
-            plt.axvline(loss_ref, color='tab:blue', linewidth=lw, alpha=alpha,
-                        zorder=3)
-            plt.plot([], [], color='tab:blue', linewidth=1,
+            lw = 3.0 if loss_ref == 0 else 1.5
+            plt.axvline(loss_ref, color='tab:blue', linewidth=lw, zorder=3)
+            plt.plot([], [], color='tab:blue', linewidth=1.2,
                      label='no sampling')
             plt.axvline(lim, color='darkblue', label='threshold quantile',
-                        linestyle='--', linewidth=1)
+                        linestyle='--', linewidth=1.2)
             plt.xlabel('loss')
             plt.ylabel('frequency density')
             plt.yscale('log')
-            if losses_lim.min() == 0:
-                lim_value = lim / 10
-            else:
-                lim_value = losses_lim.min()
+            lim_value = lim/10 if losses_lim.min() == 0 else losses_lim.min()
             _, bins = np.histogram(losses_lim)
             lim_value = max(bins[1], lim_value)
             linthresh = 10**(round(np.log10(lim_value)))
@@ -1472,7 +1462,7 @@ for molecule in radex_list:
             plt.ylim(bottom=100*ylim1)
             plt.title('Loss distribution at optimized parameters',
                       fontweight='bold')
-            plt.legend()
+            plt.legend(loc='upper right')
             ax.yaxis.set_major_formatter(mticker.FuncFormatter(ticks_format))
             ax.xaxis.set_major_formatter(mticker.FuncFormatter(ticks_format))
             
@@ -1480,9 +1470,9 @@ for molecule in radex_list:
             n += 1
             plt.subplot(nrows, ncols, n)
             plt.bar(positions, observed_lines, color='gray', edgecolor='black',
-                    width=0.5, label='observed', linewidth=2, zorder=2)
+                    width=0.75, label='observed', linewidth=2, zorder=2)
             plt.bar(positions, radex_lines, color='white', alpha=0.5,
-                    edgecolor='tab:green', width=0.5, hatch='/',
+                    edgecolor='tab:green', width=0.75, hatch='/',
                     label='modeled', linewidth=1, zorder=2)
             plt.errorbar(positions, observed_lines, observed_uncs, fmt='.',
                          color='black', capsize=2, capthick=1, zorder=3,

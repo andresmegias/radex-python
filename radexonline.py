@@ -246,7 +246,7 @@ def radex_online(molecule, min_freq, max_freq, kin_temp, backgr_temp,
     return transitions_df
 
 def get_madcuba_transitions(madcuba_csv, radex_table, molecule,
-                            lines_margin=0.0002):
+                            lines_margin=0.2):
     """
     Extract the information from the MADCUBA table for comparing it with RADEX.
 
@@ -419,7 +419,6 @@ def loss_function(observed_lines, observed_uncs, reference_lines):
     -------
     difference : float
         Value of the difference between both input tables.
-
     """
     loss = 0
     for obs_intensity, obs_intensity_unc, ref_intensity in \
@@ -431,7 +430,7 @@ def loss_function(observed_lines, observed_uncs, reference_lines):
     return loss
 
 def loss_distribution(observed_lines, observed_uncs, reference_lines,
-                        num_variants=10000):
+                      len_sample=int(1e5)):
     """
     Compute the loss distribution between the observed and reference liens.
 
@@ -443,7 +442,7 @@ def loss_distribution(observed_lines, observed_uncs, reference_lines,
         Uncertainties of the intensities of the observed lines.
     reference_lines : array
         Reference intensities of the lines.
-    num_variants : int
+    len_sample : int
         Number of points to create the distribution of intensities from the
         uncertainties. The default is 10000.
 
@@ -456,16 +455,13 @@ def loss_distribution(observed_lines, observed_uncs, reference_lines,
     observed_lines = np.array(observed_lines)
     observed_uncs = np.array(observed_uncs)
     reference_lines = np.array(reference_lines)
-    observed_lines_variants = \
-        np.repeat(observed_lines.reshape(-1,1).transpose(),
-                  num_variants, axis=0)
+    observed_lines_sample = np.repeat(observed_lines.reshape(-1,1).transpose(),
+                                      len_sample, axis=0)
     for i, unc in enumerate(observed_uncs):
-        observed_lines_variants[:,i] += \
-            np.maximum(0, np.random.normal(0, unc, num_variants))
-    losses = []
-    for observed_lines_i in observed_lines_variants:
-        losses += [loss_function(observed_lines_i, observed_uncs,
-                                 reference_lines)]
+        observed_lines_sample[:,i] += np.random.normal(0., unc, len_sample)
+        # observed_lines_sample = np.maximum(0., observed_lines_sample)
+    losses = [loss_function(observed_lines_i, observed_uncs, reference_lines)
+              for observed_lines_i in observed_lines_sample]
     losses = np.array(losses)
     return losses
 
@@ -555,10 +551,11 @@ def save_subplots(fig, size='auto', name='plot', form='pdf'):
 
 #%%
 
+plt.close('all')
 t1 = time.time()
 
 print()
-print('RADEX Online Python Interpace')
+print('RADEX Online Python Interface')
 print('-----------------------------')
 
 # Default options.
@@ -617,7 +614,7 @@ grid_points = config['grid points']
 #%%    
 
 all_results = []
-results_file = config_file.replace('.yaml', '.pkl')
+results_file = config_file.replace('.yaml', '.pkl').split('/')[-1]
 if load_previous_results:
     with open(results_file, 'rb') as file:
         previous_results = pickle.load(file)
@@ -745,7 +742,7 @@ for molecule in radex_list:
         
         if not load_previous_results:
             
-            print('Minimizing column density for {} with RADEX.'
+            print('Minimizing column density for {} with RADEX Online.'
                   .format(molecule))
             def radex_online_function(params):
                 log_x = params
@@ -757,8 +754,7 @@ for molecule in radex_list:
                     radex_online(molecule, min_freq, max_freq, kin_temp,
                                  backgr_temp, h2_num_dens, col_dens, line_width)
                 radex_lines = radex_transitions.iloc[inds]['intensity (K)'].values
-                loss = loss_function(observed_lines, observed_uncs,
-                                     radex_lines)
+                loss = loss_function(observed_lines, observed_uncs, radex_lines)
                 print('col. dens (/cm2): {:.2e}, loss: {:.2f}'
                       .format(float(col_dens), loss))
                 return loss
@@ -835,34 +831,23 @@ for molecule in radex_list:
             plt.title('Loss values', fontweight='bold')
             plt.ylim(bottom=0)
             ax.xaxis.major.formatter._useMathText = True
-            num_variants = int(1e5)
-            loss_distr = \
-                loss_distribution(observed_lines, observed_uncs, radex_lines,
-                                  num_variants=num_variants)
+            loss_distr = loss_distribution(observed_lines, observed_uncs,
+                                           radex_lines)
             loss_ref = loss_function(observed_lines, observed_uncs,
                                      radex_lines)
     
             ax = plt.subplot(1,3,2)
             plt.hist(losses_lim, color='gray', histtype='stepfilled',
                      edgecolor='black', bins='auto', density=True)
-            if loss_ref == 0:
-                lw = 3
-                alpha = 1
-            else:
-                lw = 1
-                alpha = 0.6
-            plt.axvline(loss_ref, color='tab:blue', linewidth=lw, alpha=alpha,
-                        zorder=3)
-            plt.plot([], [], color='tab:blue', linewidth=1, label='no sampling')
+            lw = 3.0 if loss_ref == 0 else 1.5
+            plt.axvline(loss_ref, color='tab:blue', linewidth=lw, zorder=3)
+            plt.plot([], [], color='tab:blue', linewidth=1.2, label='no sampling')
             plt.axvline(lim, color='darkblue', label='threshold quantile',
-                        linestyle='--', linewidth=1)
+                        linestyle='--', linewidth=1.2)
             plt.xlabel('loss')
             plt.ylabel('frequency density')
             plt.yscale('log')
-            if losses_lim.min() == 0:
-                lim_value = lim / 10
-            else:
-                lim_value = losses_lim.min()
+            lim_value = lim/10 if losses_lim.min() == 0 else losses_lim.min()
             _, bins = np.histogram(losses_lim)
             lim_value = max(bins[1], lim_value)
             linthresh = 10**(round(np.log10(lim_value)))
@@ -872,7 +857,7 @@ for molecule in radex_list:
             plt.ylim(bottom=100*ylim1)
             plt.title('Loss distribution at optimized parameters',
                       fontweight='bold')
-            plt.legend()
+            plt.legend(loc='upper right')
             ax.yaxis.set_major_formatter(mticker.FuncFormatter(ticks_format))
             ax.xaxis.set_major_formatter(mticker.FuncFormatter(ticks_format))
             
@@ -888,7 +873,7 @@ for molecule in radex_list:
             plt.ylim(bottom=0)
             plt.xlabel('frequency (GHz)')
             plt.ylabel('intensity (K)')
-            plt.title('Lines height')
+            plt.title('Lines height', fontweight='bold')
             molecule_title = format_species_name(molecule.replace('-',' '))
             plt.suptitle('{} - {}'.format(source, molecule_title),
                          fontweight='bold')
