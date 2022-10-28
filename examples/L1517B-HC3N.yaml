@@ -7,7 +7,7 @@ input files:
     - L1517BOFF1-processing.csv
 
 output files:
-    RADEX results: radex-output-HCCCN.yaml
+    RADEX results: radex-output-HC3N.yaml
     
 RADEX parameters:
     HC3N:

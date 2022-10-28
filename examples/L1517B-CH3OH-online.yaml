@@ -33,7 +33,6 @@ RADEX parameters:
 RADEX fit parameters: 'column density, H2 number density'
 
 show RADEX plots: yes
-save RADEX plots: no
+save RADEX plots: yes
 
-load previous RADEX results: no
-
+load previous RADEX results: yes
