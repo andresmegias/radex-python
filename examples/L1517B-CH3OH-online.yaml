@@ -2,9 +2,9 @@ input files:
     MADCUBA table:
     - L1517B-madcuba.csv
     - L1517BOFF1-madcuba.csv
-    processing table:
-    - L1517B-processing.csv
-    - L1517BOFF1-processing.csv
+    spectra table:
+    - L1517B-spectra.csv
+    - L1517BOFF1-spectra.csv
     
 RADEX parameters:
     CH3OH-A:
@@ -35,4 +35,4 @@ RADEX fit parameters: 'column density, H2 number density'
 show RADEX plots: yes
 save RADEX plots: yes
 
-load previous RADEX results: no
+load previous RADEX results: yes

@@ -2,9 +2,9 @@ input files:
     MADCUBA table:
     - L1517B-madcuba.csv
     - L1517BOFF1-madcuba.csv
-    processing table:
-    - L1517B-processing.csv
-    - L1517BOFF1-processing.csv
+    spectra table:
+    - L1517B-spectra.csv
+    - L1517BOFF1-spectra.csv
 
 output files:
     RADEX results: radex-output-HC3N.yaml
@@ -28,4 +28,4 @@ show RADEX plots: yes
 save RADEX plots: yes
 save individual plots: yes
 
-load previous RADEX results: no
+load previous RADEX results: yes
