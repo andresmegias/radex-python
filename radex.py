@@ -1024,8 +1024,8 @@ config = {**default_config, **config}
 
 if 'input files' in config and 'MADCUBA table' in config['input files']:      
     config_input_madcuba = config['input files']['MADCUBA table']
-if 'input files' in config and 'processing table' in config['input files']:      
-    config_input_processing = config['input files']['processing table']
+if 'input files' in config and 'spectra table' in config['input files']:      
+    config_input_spectra = config['input files']['spectra table']
 if not 'RADEX results' in config['output files']:
     config['output files']['RADEX results'] = \
         default_config['output files']['RADEX results']
@@ -1086,12 +1086,12 @@ for molecule in radex_list:
             source = 'source ' + str(s+1)
             print('\nSource {}.'.format(s+1))
         
-        if 'input files' in config and 'processing table' in config['input files']:
-            if len(config_input_processing) > 0:
-                input_processing = config_input_processing[s]
+        if 'input files' in config and 'spectra table' in config['input files']:
+            if len(config_input_spectra) > 0:
+                input_spectra = config_input_spectra[s]
             else:
-                input_processing = copy.copy(input_processing)
-            table_proc = pd.read_csv(input_processing, sep=',')    
+                input_spectra = copy.copy(input_spectra)
+            table_proc = pd.read_csv(input_spectra, sep=',')    
     
         radex_params = radex_list[molecule]
         if s == 0:
