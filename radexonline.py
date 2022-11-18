@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
-config_file = 'examples/L1517B-CH3OH-online.yaml'
+config_file = 'examples/L1517B-CH3OH.yaml'
 
 import os
 import re
@@ -771,12 +771,8 @@ for molecule in radex_list:
             print('Calculating column density uncertainty for {} with RADEX.'
                   .format(molecule))
             losses_lim = loss_distribution(observed_lines, observed_uncs,
-                                           radex_lines)
-            loss_ref = loss_function(observed_lines, observed_uncs, radex_lines)
-            idx = np.argmin(abs(np.sort(losses_lim) - loss_ref))              
-            perc = max(68.27, 100*idx/len(losses_lim) + 68.27/2)
-            perc = min(100, perc)
-            lim = np.percentile(losses_lim, perc)
+                                           radex_lines)           
+            lim = np.percentile(losses_lim, 68.27)
             col_dens, col_dens_uncs, (col_dens_values, losses) = \
                 radex_uncertainty(molecule, observed_transitions,
                                   min_freq, max_freq, kin_temp,
@@ -798,12 +794,8 @@ for molecule in radex_list:
         radex_lines = radex_transitions.iloc[inds]['intensity (K)'].values 
 
         losses_lim = loss_distribution(observed_lines, observed_uncs,
-                                       radex_lines)
-        loss_ref = loss_function(observed_lines, observed_uncs, radex_lines)
-        idx = np.argmin(abs(np.sort(losses_lim) - loss_ref))           
-        perc = max(68.27, 100*idx/len(losses_lim) + 68.27/2)
-        perc = min(100, perc)
-        lim = np.percentile(losses_lim, perc)
+                                       radex_lines)    
+        lim = np.percentile(losses_lim, 68.27)
             
         positions = np.arange(len(observed_lines))
         labels = radex_transitions['frequency (GHz)'].values

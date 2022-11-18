@@ -1252,10 +1252,8 @@ for molecule in radex_list:
             losses_lim = loss_distribution(observed_lines, observed_uncs,
                                            radex_lines)
             loss_ref = loss_function(observed_lines, observed_uncs, radex_lines)
-            idx = np.argmin(abs(np.sort(losses_lim) - loss_ref))              
-            perc = max(68.27, 100*idx/len(losses_lim) + 68.27/2)
-            perc = min(100, perc)
-            lim = np.percentile(losses_lim, perc)
+            idx = np.argmin(abs(np.sort(losses_lim) - loss_ref))
+            lim = np.percentile(losses_lim, 68.27)
             
             print('Calculating uncertainty for {} with RADEX.'
                   .format(molecule))
@@ -1298,9 +1296,7 @@ for molecule in radex_list:
                                        radex_lines)
         loss_ref = loss_function(observed_lines, observed_uncs, radex_lines)
         idx = np.argmin(abs(np.sort(losses_lim) - loss_ref))           
-        perc = max(68.27, 100*idx/len(losses_lim) + 68.27/2)
-        perc = min(100, perc)
-        lim = np.percentile(losses_lim, perc)
+        lim = np.percentile(losses_lim, 68.27)
         
         print(radex_transitions)
         
@@ -1447,7 +1443,7 @@ for molecule in radex_list:
             plt.axvline(loss_ref, color='tab:blue', linewidth=lw, zorder=3)
             plt.plot([], [], color='tab:blue', linewidth=1.2,
                      label='no sampling')
-            plt.axvline(lim, color='darkblue', label='threshold quantile',
+            plt.axvline(lim, color='darkblue', label='$1\,$σ quantile',
                         linestyle='--', linewidth=1.2)
             plt.xlabel('loss')
             plt.ylabel('frequency density')
