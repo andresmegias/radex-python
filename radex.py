@@ -3,7 +3,7 @@
 """
 RADEX Online Python Interface
 -----------------------------
-Version 1.3
+Version 1.4
 
 Copyright (C) 2022  Andrés Megías Toledano
 
@@ -21,7 +21,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
 radex_path = '/Users/andresmegias/Documents/RADEX/bin/radex'
-config_file = 'examples/L1517B-CH3CN.yaml'
+config_file = 'examples/L1517B-HC3N.yaml'
 
 import os
 import re
@@ -1228,19 +1228,19 @@ for molecule in radex_list:
                   .format(molecule))            
 
             if fit_params == 'column density':
-                arg = np.log10(float(col_dens))
-                results = minimize(radex_function, arg, method='COBYLA',
+                guess = np.log10(float(col_dens))
+                results = minimize(radex_function, guess, method='COBYLA',
                                    options={'maxiter': max_iters, 'disp': False})
                 col_dens = float(10**results.x)
             elif fit_params == 'column density, H2 number density':
-                args = (np.log10(float(col_dens)), np.log10(float(h2_num_dens)))
-                results = minimize(radex_function, args, method='Nelder-Mead',
+                guess = (np.log10(float(col_dens)), np.log10(float(h2_num_dens)))
+                results = minimize(radex_function, guess, method='Nelder-Mead',
                                    options={'maxiter': max_iters, 'disp': False})
                 col_dens = float(10**results.x[0])
                 h2_num_dens = float(10**results.x[1])
             elif fit_params == 'column density, temperature':
-                args = (np.log10(float(col_dens)), float(kin_temp))
-                results = minimize(radex_function, args, method='Nelder-Mead',
+                guess = (np.log10(float(col_dens)), float(kin_temp))
+                results = minimize(radex_function, guess, method='Nelder-Mead',
                                    options={'maxiter': max_iters, 'disp': False})
                 col_dens = float(10**results.x[0])
                 kin_temp = float(results.x[1])
@@ -1272,16 +1272,16 @@ for molecule in radex_list:
             
         if fit_params == 'column density':
             col_dens_values, col_dens_losses = unc_results[1]
-            col_dens = unc_results[0].center
+            col_dens = unc_results[0].main
             col_dens_uncs = unc_results[0].unc
         else:
-            col_dens = unc_results[0].center
+            col_dens = unc_results[0].main
             col_dens_uncs = unc_results[0].unc        
             if fit_params == 'column density, H2 number density':
-                h2_num_dens = unc_results[1].center
+                h2_num_dens = unc_results[1].main
                 h2_num_dens_uncs = unc_results[1].unc
             elif fit_params == 'column density, temperature':
-                kin_temp = unc_results[1].center
+                kin_temp = unc_results[1].main
                 kin_temp_uncs = unc_results[1].unc    
             
         all_results += [[col_dens, h2_num_dens, kin_temp, unc_results]]
@@ -1393,11 +1393,11 @@ for molecule in radex_list:
                                                                  colors)
                 size = 1e4/len(z)
                 plt.scatter(x, y, c=z, cmap=ccmap, s=size, alpha=1, norm=norm)
-                plt.axhline(y0.center, color='gray', alpha=0.8, zorder=2)
-                plt.axvline(x0.center, color='gray', alpha=0.8, zorder=2)
-                plt.scatter(x0.center, y0.center, c=0.01*lim, cmap=ccmap,
+                plt.axhline(y0.main, color='gray', alpha=0.8, zorder=2)
+                plt.axvline(x0.main, color='gray', alpha=0.8, zorder=2)
+                plt.scatter(x0.main, y0.main, c=0.01*lim, cmap=ccmap,
                             s=size, zorder=3, norm=norm)
-                # ax.scatter(x0.center, y0.center, s=2, c='darkorchid')
+                # ax.scatter(x0.main, y0.main, s=2, c='darkorchid')
                 cbar = plt.colorbar(label='loss', extend='both')
                 cbar.ax.axhline(y=lim, color='darkblue', lw=2)
                 # cbar.ax.axhline(y=z.min(), color='darkorchid')
@@ -1415,9 +1415,9 @@ for molecule in radex_list:
                 cond = z != 0
                 ax.scatter(x[cond], y[cond], z[cond], c=z[cond], s=size,
                            cmap=ccmap, alpha=0.9, norm=norm)
-                ax.scatter(x0.center, y0.center, z0, c=0.01*lim,
+                ax.scatter(x0.main, y0.main, z0, c=0.01*lim,
                            s=size, cmap=ccmap, alpha=1, norm=norm)
-                ax.plot3D([x0.center, x0.center], [y0.center, y0.center],
+                ax.plot3D([x0.main, x0.main], [y0.main, y0.main],
                           [0, zmax], color='gray', alpha=0.7)
                 ax.plot_surface(xx, yy, zp, alpha=0.7, color='darkblue')
                 ax.set_xlabel(xlabel)
@@ -1500,12 +1500,15 @@ for molecule in radex_list:
                 plt.pause(0.1)
            
         
-        col_dens = rv.RichValue(col_dens, col_dens_uncs, num_sf=2)
+        col_dens = rv.RichValue(col_dens, col_dens_uncs)
+        col_dens.num_sf = 2
         
         if fit_params == 'column density, H2 number density':
-            h2_num_dens = rv.RichValue(h2_num_dens, h2_num_dens_uncs, num_sf=2)
+            h2_num_dens = rv.RichValue(h2_num_dens, h2_num_dens_uncs)
+            h2_num_dens.num_sf = 2
         elif fit_params == 'column density, temperature':
-            kin_temp = rv.RichValue(kin_temp, kin_temp_uncs, num_sf=2)
+            kin_temp = rv.RichValue(kin_temp, kin_temp_uncs)
+            kin_temp.num_sf = 2
             
         col_dens = str(col_dens)
         h2_num_dens = str(h2_num_dens)
