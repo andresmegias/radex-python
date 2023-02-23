@@ -1,4 +1,4 @@
-# RADEX Python Interface
+# RADEX Line Fitter
 
 Python interface for using the software RADEX. It consists of a Python 3 script, `radex.py`, which is used with RADEX locally.
 
