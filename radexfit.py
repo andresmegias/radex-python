@@ -129,7 +129,6 @@ def format_species_name(input_name, simplify_numbers=True):
                 upperscript = ''
                 in_upperscript, possible_upperscript = False, False
                 inds = []
-    output_name = output_name.replace('^$_', '$^').replace('$$', '')
     if output_name.endswith('+') or output_name.endswith('-'):
         symbol = output_name[-1]
         output_name = output_name.replace(symbol, '$^{'+symbol+'}$')
@@ -153,6 +152,7 @@ def format_species_name(input_name, simplify_numbers=True):
         if i+1 == len(original_name) and len(subscript) > 0:
             output_name += '$_{' + subscript + '}$'
         prev_char = char
+    output_name = output_name.replace('^$_', '$^').replace('$$', '')
     # vibrational numbers
     output_name = output_name.replace(',vt', ', vt')
     output_name = output_name.replace(', vt=', '$, v_t=$')
@@ -983,8 +983,8 @@ plt.close('all')
 t1 = time.time()
 
 print()
-print('RADEX Python Interface')
-print('----------------------')
+print('RADEX Line Fitter')
+print('-----------------')
 
 # Default options.
 default_config = {
