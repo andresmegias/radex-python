@@ -24,7 +24,7 @@ RADEX parameters:
 
 RADEX fit parameters: 'column density'
 
-show RADEX plots: yes
+show RADEX plots: no
 save RADEX plots: yes
 save individual plots: yes
 
