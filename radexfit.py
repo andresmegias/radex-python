@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 RADEX Line Fitter
 -----------------
@@ -837,7 +838,6 @@ def radex_uncertainty_grid(observed_transitions, molecule, min_freq, max_freq,
         
     return results
 
-
 def ticks_format(value, index):
     """
     Format the input value.
@@ -905,16 +905,16 @@ def save_subplots(fig, size='auto', name='plot', form='pdf'):
                 new_ax.extend([ax])
             else:
                 new_fig.delaxes(ax)
-        new_ax[0].change_geometry(1,1,1)
+        new_ax[0].set_subplotspec(plt.GridSpec(1,1)[0])
         title = new_ax[0].get_title()
         new_ax[0].set_title(suptitle + '\n' + title, fontweight='bold')
-        new_size = copy.copy(size)
+        new_size = size
         if type(size) is str and size == 'auto':
-            old_geometry = np.array(oax.get_geometry()[:2])[::-1]
+            old_geometry = np.array(oax.get_subplotspec().get_geometry()[:2])[::-1]
             new_size = fig.get_size_inches() / old_geometry
         if len(new_ax) == 2:
-            new_ax[0].change_geometry(1,2,1)
-            new_ax[1].change_geometry(1,2,2)
+            new_ax[0].set_subplotspec(plt.GridSpec(1,2)[0])
+            new_ax[1].set_subplotspec(plt.GridSpec(1,2)[0])
             new_size[0] = new_size[0] * 1.5
         new_fig.set_size_inches(new_size, forward=True)
         new_fig.set_dpi(fig.dpi)
@@ -1357,12 +1357,6 @@ for molecule in radex_list:
                 figsize = (10, 8)
             fig = plt.figure(k, figsize=figsize)
             plt.clf()
-            scalar_formatter = mticker.ScalarFormatter(useOffset=True,
-                                                       useMathText=True)
-            def format_func(x, pos):
-                g = "${}$".format(scalar_formatter._formatSciNotation(
-                                                                 '%1.10e' % x))
-                return g
             
             if fit_params == 'column density':
                 nrows, ncols = 1, 3
@@ -1408,8 +1402,8 @@ for molecule in radex_list:
                 ax.set_title('Loss values', fontweight='bold')
                 ax.xaxis.major.formatter._useMathText = True
                 ax.yaxis.major.formatter._useMathText = True
-                ax.yaxis.set_major_formatter(mticker.FuncFormatter(format_func))
-                ax.xaxis.set_major_formatter(mticker.FuncFormatter(format_func))
+                ax.yaxis.set_major_formatter(mticker.LogFormatterSciNotation())
+                ax.xaxis.set_major_formatter(mticker.LogFormatterSciNotation())
                 n += 1
                 ax = plt.subplot(nrows, ncols, n, projection='3d')
                 cond = z != 0
@@ -1432,9 +1426,8 @@ for molecule in radex_list:
                 ax.xaxis.major.formatter._useMathText = True
                 ax.yaxis.major.formatter._useMathText = True
                 ax.zaxis.major.formatter._useMathText = True
-                ax.yaxis.set_major_formatter(mticker.FuncFormatter(format_func))
-                ax.xaxis.set_major_formatter(mticker.FuncFormatter(format_func))
-                ax.zaxis.set_major_formatter(mticker.FuncFormatter(format_func))
+                ax.yaxis.set_major_formatter(mticker.LogFormatterSciNotation())
+                ax.xaxis.set_major_formatter(mticker.LogFormatterSciNotation())
                 n += 1
             ax = plt.subplot(nrows, ncols, n)
             plt.hist(losses_lim, color='gray', histtype='stepfilled',
@@ -1461,6 +1454,7 @@ for molecule in radex_list:
             plt.legend(loc='upper right')
             ax.yaxis.set_major_formatter(mticker.FuncFormatter(ticks_format))
             ax.xaxis.set_major_formatter(mticker.FuncFormatter(ticks_format))
+            # ax.ticklabel_format(style='sci', useMathText=True, useOffset=True)
             
             positions = np.arange(len(observed_lines))
             n += 1
